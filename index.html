@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ফিজিক্স ১ম অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question:
+            "কোন নিত্যতার সূত্র জেট ইঞ্জিন বা রকেটের কার্যনীতির ভিত্তি?",
+          options: {
+            a: "ভর",
+            b: "শক্তি",
+            c: "কৌণিক ভরবেগ",
+            d: "রৈখিক ভরবেগ",
+          },
+          correct: "d",
+          explanation:
+            "<p>জেট ইঞ্জিন বা রকেটের কার্যনীতি **রৈখিক ভরবেগের নিত্যতা সূত্র (Law of Conservation of Linear Momentum)** এর উপর ভিত্তি করে গঠিত। এই সূত্রানুসারে, যদি একটি সিস্টেমের উপর কোনো বাহ্যিক নিট বল প্রয়োগ না হয়, তাহলে সিস্টেমের মোট রৈখিক ভরবেগ ধ্রুব থাকে। রকেটের ক্ষেত্রে, জ্বালানি দহনের ফলে উচ্চ বেগে গ্যাস নির্গত হয়। এই গ্যাস নির্গমনের ফলে রকেটের পেছনের দিকে একটি ভরবেগ তৈরি হয়, এবং রৈখিক ভরবেগের নিত্যতা বজায় রাখার জন্য রকেটটি সামনের দিকে সমান ও বিপরীত ভরবেগ লাভ করে। এটি নিউটনের গতির তৃতীয় সূত্রের একটি ব্যবহারিক প্রয়োগ, যেখানে গ্যাসের নির্গমনকে ক্রিয়া এবং রকেটের সামনের দিকে গতিকে প্রতিক্রিয়া হিসেবে দেখা যায়।</p>",
+        },
+        {
+          id: 2,
+          question: "বল ও বলের ক্রিয়াকালের গুণফলকে কী বলে?",
+          options: {
+            a: "বলের ঘাত",
+            b: "ঘাত বল",
+            c: "ভ্রামক",
+            d: "শক্তি",
+          },
+          correct: "a",
+          explanation:
+            "<p>**বলের ঘাত (Impulse of Force)** হলো বল এবং বলের ক্রিয়াকালের গুণফল। যখন একটি বল F, অতি অল্প সময় Δt ধরে কোনো বস্তুর উপর ক্রিয়া করে, তখন বলের ঘাত J = F × Δt। বলের ঘাত বস্তুর রৈখিক ভরবেগের পরিবর্তনের সমান। অর্থাৎ, J = Δp = mv - mu, যেখানে m হলো বস্তুর ভর, v হলো শেষ বেগ এবং u হলো আদি বেগ। এটি একটি ভেক্টর রাশি এবং এর দিক বলের দিকের অনুরূপ।</p>",
+        },
+        {
+          id: 3,
+          question:
+            "20m উঁচু থেকে একটি বল বালির মধ্যে পতিত হলে বালির মধ্যে 1 m ঢুকে থেমে গেল, এক্ষেত্রে নিচের কোনটি সংরক্ষিত থাকবে?",
+          options: {
+            a: "শুধুমাত্র গতিশক্তি",
+            b: "ভরবেগ ও গতিশক্তি উভয়ই",
+            c: "শুধুমাত্র ভরবেগ",
+            d: "প্রযুক্ত বল",
+          },
+          correct: "c",
+          explanation:
+            "<p>যখন একটি বল বালির মধ্যে পতিত হয় এবং থেমে যায়, তখন বল এবং বালির কণাগুলোর মধ্যে একটি **সংঘর্ষ (Collision)** ঘটে। এই সংঘর্ষের সময়, বল এবং বালির কণাগুলোর মধ্যে অভ্যন্তরীণ বল কাজ করে। যদিও এই প্রক্রিয়ায় ঘর্ষণের কারণে তাপ, শব্দ ইত্যাদি শক্তি উৎপন্ন হয় এবং কিছু শক্তি ব্যয়িত হয়, অর্থাৎ গতিশক্তি সংরক্ষিত থাকে না, তবে সিস্টেমের (বল + বালি) উপর বাইরে থেকে কোনো নিট বল প্রযুক্ত না হওয়ায় **রৈখিক ভরবেগ (Linear Momentum)** সংরক্ষিত থাকে। অর্থাৎ, সংঘর্ষের আগে সিস্টেমের মোট ভরবেগ এবং সংঘর্ষের পরে সিস্টেমের মোট ভরবেগ সমান থাকে।</p>",
+        },
+        {
+          id: 4,
+          question:
+            "খুব অল্প সময়ের জন্য খুব বড় মাপের বল প্রযুক্ত হলে তাকে বলে-",
+          options: {
+            a: "ঘাত বল",
+            b: "সংঘর্ষ",
+            c: "সংসক্তি বল",
+            d: "ঘূর্ণন বল",
+          },
+          correct: "a",
+          explanation:
+            "<p>যখন খুব অল্প সময়ের জন্য (যেমন: হাতুড়ি দিয়ে পেরেক ঠোকা, ব্যাট দিয়ে বল মারা) কোনো বস্তুর উপর **খুব বড় মাপের বল (Very Large Force)** প্রযুক্ত হয়, তখন সেই বলকে **ঘাত বল (Impulsive Force)** বলে। এই ঘাত বলের ক্রিয়ায় বস্তুর ভরবেগের একটি তাৎক্ষণিক পরিবর্তন ঘটে। ঘাত বলের ক্রিয়াকাল অত্যন্ত কম হওয়ায় একে সরাসরি পরিমাপ করা কঠিন, তবে এর প্রভাব (ভরবেগের পরিবর্তন) পরিমাপ করা সহজ। ঘাত বল এবং ক্রিয়াকালের গুণফলকে বলের ঘাত (Impulse of Force) বলে।</p>",
+        },
+        {
+          id: 5,
+          question: "ভরবেগের মাত্রা সমীকরণ নিচের কোনটি?",
+          options: {
+            a: "[MLT⁻¹]",
+            b: "[MLT⁻²]",
+            c: "[ML²T]",
+            d: "[ML²T⁻²]",
+          },
+          correct: "a",
+          explanation:
+            "<p>**ভরবেগ (Momentum)** হলো ভর এবং বেগের গুণফল। গাণিতিকভাবে, p = mv, যেখানে p হলো ভরবেগ, m হলো ভর এবং v হলো বেগ।</p><br><p>এখন, ভরবেগের মাত্রা সমীকরণ নির্ণয় করি:</p><br><p>• **ভর (m)** এর মাত্রা = [M]</p><br><p>• **বেগ (v)** এর মাত্রা = [LT⁻¹] (কারণ বেগ = দূরত্ব / সময়)</p><br><p>অতএব, ভরবেগের মাত্রা হবে:</p><br><p>[p] = [m] × [v] = [M] × [LT⁻¹] = [MLT⁻¹]</p>",
+        },
+        {
+          id: 6,
+          question:
+            "নিউটনের গতির তৃতীয় সূত্রানুসারে ক্রিয়া-প্রতিক্রিয়ার মধ্যে কোণ কত?",
+          options: {
+            a: "0°",
+            b: "90°",
+            c: "180°",
+            d: "360°",
+          },
+          correct: "c",
+          explanation:
+            "<p>নিউটনের গতির তৃতীয় সূত্রানুসারে, **প্রত্যেক ক্রিয়ারই একটি সমান ও বিপরীত প্রতিক্রিয়া আছে (To every action, there is an equal and opposite reaction)**। এর অর্থ হলো, যখন একটি বস্তু অন্য একটি বস্তুর উপর বল প্রয়োগ করে (ক্রিয়া), তখন দ্বিতীয় বস্তুটি প্রথম বস্তুর উপর সমান পরিমাণ বল বিপরীত দিকে প্রয়োগ করে (প্রতিক্রিয়া)। এই ক্রিয়া এবং প্রতিক্রিয়া বল দুটি একই বস্তুর উপর ক্রিয়া করে না, বরং ভিন্ন ভিন্ন বস্তুর উপর ক্রিয়া করে। যেহেতু বল দুটি সমান ও বিপরীতমুখী, তাই তাদের মধ্যে **কোণ 180°** হয়।</p>",
+        },
+        {
+          id: 7,
+          question:
+            "একটি লিফট a ত্বরণে নিচে নামছে। m ভরের একজন ব্যক্তি লিফটের মেঝেতে কত বল প্রয়োগ করবে?",
+          options: {
+            a: "ma - mg",
+            b: "ma",
+            c: "m(g - a)",
+            d: "m(g + a)",
+          },
+          correct: "c",
+          explanation:
+            "<p>যখন একটি লিফট 'a' ত্বরণে নিচে নামে, তখন লিফটের ভিতরে থাকা ব্যক্তির উপর দুটি বল কাজ করে:</p><br><p>1. ব্যক্তির ওজন (Weight), যা নিম্নমুখী: W = mg</p><br><p>2. লিফটের মেঝে দ্বারা ব্যক্তির উপর প্রযুক্ত উর্ধ্বমুখী প্রতিক্রিয়া বল (Normal Force), N। এই N ই হলো ব্যক্তি দ্বারা মেঝের উপর প্রযুক্ত বলের সমান ও বিপরীত।</p><br><p>নিউটনের দ্বিতীয় সূত্র অনুযায়ী, নিট বল = ভর × ত্বরণ। যেহেতু লিফট নিচে নামছে, তাই নিট বল নিম্নমুখী হবে।</p><br><p>mg - N = ma</p><br><p>এখান থেকে, N = mg - ma</p><br><p>N = m(g - a)</p><br><p>সুতরাং, m ভরের একজন ব্যক্তি লিফটের মেঝেতে **m(g - a)** পরিমাণ বল প্রয়োগ করবে।</p>",
+        },
+        {
+          id: 8,
+          question:
+            "লিফটে দণ্ডায়মান একজন ব্যক্তির অতিভারহীনতা পরিলক্ষিত হয় যখন লিফটের ত্বরণ, a = ?",
+          options: {
+            a: "a = g",
+            b: "a < g",
+            c: "a > g",
+            d: "a ≠ g",
+          },
+          correct: "c",
+          explanation:
+            "<p>লিফটে দণ্ডায়মান একজন ব্যক্তির **অতিভারহীনতা (Overweight)** পরিলক্ষিত হয় যখন লিফটটি ঊর্ধ্বমুখী ত্বরণে (বা নিম্নমুখী মন্দনে) গতিশীল হয়। এক্ষেত্রে, লিফটের মেঝে দ্বারা ব্যক্তির উপর প্রযুক্ত প্রতিক্রিয়া বল (Normal Force) তার প্রকৃত ওজনের চেয়ে বেশি হয়।</p><br><p>যদি লিফট 'a' ত্বরণে উপরে ওঠে, তাহলে মেঝে দ্বারা প্রযুক্ত বল, N = m(g + a)। এক্ষেত্রে N > mg, তাই ব্যক্তি নিজেকে ভারী মনে করেন।</p><br><p>তবে, প্রশ্নটি সম্ভবত **ভারহীনতা (Weightlessness)** বা **আপাত ওজনহীনতা (Apparent Weightlessness)** বোঝাতে চেয়েছিল, যেখানে ব্যক্তি নিজেকে হালকা মনে করেন। এই অবস্থাটি দুটি ক্ষেত্রে দেখা যায়:</p><br><p>1. লিফট 'g' ত্বরণে নিচে নামলে (যেমন, তার ছিঁড়ে গেলে)। সেক্ষেত্রে N = m(g - g) = 0। এটি **পূর্ণ ভারহীনতা**।</p><br><p>2. লিফট 'a' ত্বরণে নিচে নামলে, যেখানে a < g। সেক্ষেত্রে N = m(g - a)। এখানে N < mg, তাই ব্যক্তি নিজেকে হালকা মনে করেন (আংশিক ভারহীনতা)।</p><br><p>যদি প্রশ্নটি 'অতিভারহীনতা' বলতে ভুল করে 'ভারহীনতা' বা 'আপাত ওজনহীনতা' বুঝিয়ে থাকে, তাহলে a = g (পূর্ণ ভারহীনতা) বা a < g (আংশিক ভারহীনতা) হতো। কিন্তু 'অতিভারহীনতা' (অর্থাৎ নিজেকে স্বাভাবিকের চেয়ে বেশি ভারী মনে করা) তখনই হয় যখন লিফট উপর দিকে ত্বরণে চলে অথবা নিচে নামার সময় মন্দন হয়। অপশনগুলোতে উপরের দিকে ত্বরণের কোনো শর্ত নেই।</p><br><p>তবে, যদি লিফট 'a' ত্বরণে নিচে নামার সময় 'a > g' হয়, তাহলে কী হবে? বাস্তবে এটি সম্ভব নয়, কারণ 'g' এর চেয়ে বেশি ত্বরণে নিচে নামলে ব্যক্তি লিফটের সিলিংয়ে ধাক্কা খাবেন। কিন্তু যদি এমনটা হয়, তাহলে মেঝে দ্বারা প্রতিক্রিয়া বলের দিক উল্টে যাবে, অর্থাৎ লিফট ব্যক্তিকে নিজের দিকে টানবে, ফলে ব্যক্তি ভারহীনতা বা ঋণাত্মক ওজন অনুভব করবেন।</p><br><p>প্রশ্নপত্রে 'অতিভারহীনতা' শব্দটি ব্যবহার করা হয়েছে। সাধারণত, যখন লিফট উপরে ওঠে, তখন ব্যক্তির ওজন বৃদ্ধি পায় এবং এটিই **অতিভারহীনতা**। এক্ষেত্রে সূত্রটি হলো N = m(g + a)। যদি অপশনগুলোর মধ্যে a > g থাকে, তাহলে এটি কোনোভাবে উপরের ত্বরণের সাথে সম্পর্কিত হতে পারে, অথবা প্রশ্নকর্তা 'ভারহীনতা'র পরিবর্তে 'অতিভারহীনতা' শব্দটা ব্যবহার করে অন্য কোনো শর্ত বোঝাতে চেয়েছেন। প্রদত্ত অপশনগুলোর মধ্যে, যদি লিফট নিচে নামার সময় **a = g** হয়, তবে সেটি **ভারহীনতা (Weightlessness)**। এবং যদি **a > g** হয় (যা বাস্তব ক্ষেত্রে লিফট তার ছিঁড়ে পড়ার চেয়ে বেশি ত্বরণে নিচে নামলে হয়), তাহলে ব্যক্তি সিলিং-এর দিকে চলে যাবে।</p><br><p>প্রদত্ত উত্তরে (c) a > g রয়েছে। যদি এটি সত্য হয়, তাহলে এটি কোনো বিশেষ বা অস্বাভাবিক পরিস্থিতি নির্দেশ করে, যেখানে আপাত ওজন অস্বাভাবিক। সাধারণত, **অতিভারহীনতা হয় যখন লিফট উপরে ওঠে, অর্থাৎ ত্বরণ উর্ধ্বমুখী হয়**, তখন আপাত ওজন W' = m(g+a)। তবে, এই অপশনটি সম্ভবত ভুল, কারণ লিফট নিচে নামার ক্ষেত্রে 'অতিভারহীনতা' বোঝাতে সাধারণত a < g বা a = g বোঝানো হয় না। সঠিক উত্তরটি আসলে লিফট যখন উপরে ওঠে, তখন a > 0 হয়। কিন্তু অপশনে (c) a > g আছে, যা একটি বিশেষ পরিস্থিতি বোঝায়। এরোপ্লেনের ক্ষেত্রে এই ধরনের পরিস্থিতি আসতে পারে যখন এটি দ্রুত উপরে বা নিচে নামছে। সাধারণত, অতিভারহীনতা তখনই হয় যখন ব্যক্তির উপর উপরের দিকে একটি অতিরিক্ত বল কাজ করে। এই অপশনটি কিছুটা বিভ্রান্তিকর।</p><br><p>যদি প্রশ্নটি **ভারহীনতা (Weightlessness)** বোঝাতো, তাহলে উত্তর হতো a = g (অর্থাৎ, লিফট মুক্তভাবে নিচে পড়ছে)। যদি প্রশ্নটি **আপাত ওজন হ্রাস (Apparent Weight Decrease)** বোঝাতো, তাহলে উত্তর হতো a < g (লিফট নিচে নামছে)। তবে, **অতিভারহীনতা (Overweight)** তখনই হয় যখন লিফট উপরে ওঠে, অর্থাৎ W' = m(g + a)। সেক্ষেত্রে 'a' ধনাত্মক হয়। প্রদত্ত অপশনগুলোর মধ্যে 'a > g' একমাত্র তখনই প্রাসঙ্গিক হয় যখন অন্য কোনো অতিরিক্ত বলের প্রভাব থাকে অথবা একটি বিশেষ গতির পরিস্থিতি বোঝানো হয় যা লিফটের সাধারণ কার্যপ্রনালীর বাইরে। সম্ভবত, প্রশ্নটি 'ভারহীনতা' বোঝাতে গিয়ে ভুলবশত 'অতিভারহীনতা' ব্যবহার করেছে, এবং এক্ষেত্রে a = g হলে পূর্ণ ভারহীনতা হয়।</p><br><p>তথ্যের জন্য: সাধারণত, লিফট যখন উর্ধ্বমুখী ত্বরণে চলে (a > 0), তখন **অতিভারহীনতা** পরিলক্ষিত হয়। এই অবস্থায় আপাত ওজন হয় m(g + a)। যদি লিফট স্থির থাকে বা সমবেগে চলে, তবে আপাত ওজন = mg। যদি লিফট নিম্নমুখী ত্বরণে চলে (a > 0), তখন আপাত ওজন হয় m(g - a)। যদি a = g হয়, তবে আপাত ওজন শূন্য (ভারহীনতা)। যদি a > g হয় (অর্থাৎ g এর চেয়ে বেশি ত্বরণে নিচে নামে), তবে ব্যক্তি লিফটের ছাদে লেগে যাবে। এই প্রশ্নটি কিছুটা অস্পষ্ট, কিন্তু যদি 'অতিভারহীনতা' বলতে 'আপাত ওজন বৃদ্ধি' বোঝানো হয়, তাহলে লিফটের উপরের দিকে ত্বরণ হয়। যেহেতু অপশনে a > g আছে, এবং এটি একটি ব্যতিক্রমী অবস্থা, তাই এর স্পষ্ট ব্যাখ্যা নির্ভর করে প্রশ্নকর্তার উদ্দেশ্য কী ছিল তার উপর। বাংলাদেশের বিভিন্ন শিক্ষাপ্রতিষ্ঠানের প্রশ্নপত্রে এই ধরনের ব্যতিক্রমী ক্ষেত্রে 'a > g' কে 'অতিভারহীনতা' বোঝাতে ব্যবহার করা হতে পারে, যদিও এটি সাধারণ শর্ত নয়।</p>",
+        },
+        {
+          id: 9,
+          question:
+            "একটি ব্যক্তি প্লেনের মধ্যে একটি স্প্রিং তুলা যন্ত্রের সাহায্যে একটা বস্তুর ওজন পরিমাপ করছেন। এরোপ্লেনটা স্থির অবস্থা থেকে খাড়া ওপরের দিকে ক্রমাগত উঠতে থাকলে স্প্রিং তুলা যন্ত্রের পাঠের কীরূপ পরিবর্তন হবে?",
+          options: {
+            a: "ক্রমশ বৃদ্ধি পাবে",
+            b: "ক্রমশ হ্রাস পাবে",
+            c: "প্রথমে বৃদ্ধি পাবে এবং তারপর হ্রাস পাবে",
+            d: "অপরিবর্তিত থাকবে",
+          },
+          correct: "a",
+          explanation:
+            "<p>যখন এরোপ্লেনটি স্থির অবস্থা থেকে খাড়া ওপরের দিকে ক্রমাগত উঠতে থাকে, তখন এর একটি **ঊর্ধ্বমুখী ত্বরণ (Upward Acceleration)** থাকে। এই অবস্থায়, প্লেনের ভেতরে থাকা স্প্রিং তুলা যন্ত্রে মাপা বস্তুর আপাত ওজন (Apparent Weight) বৃদ্ধি পায়।</p><br><p>এর কারণ হলো, বস্তুর প্রকৃত ওজন (mg) নিচের দিকে ক্রিয়া করে, এবং লিফটের মতো প্লেনের মেঝে বস্তুর উপর একটি অতিরিক্ত উর্ধ্বমুখী প্রতিক্রিয়া বল (ma) প্রয়োগ করে। সুতরাং, স্প্রিং তুলা যন্ত্রের পাঠ হবে N = m(g + a)।</p><br><p>যেহেতু এরোপ্লেনটি 'ক্রমশ' উপরের দিকে উঠতে থাকে, এর অর্থ হলো এটি একটি নির্দিষ্ট ত্বরণে উঠতে থাকে বা ত্বরণ ক্রমশ বাড়তে পারে। তাই স্প্রিং তুলা যন্ত্রের পাঠ **ক্রমশ বৃদ্ধি পাবে**। যতক্ষণ ত্বরণ বিদ্যমান থাকবে, ততক্ষণ আপাত ওজন প্রকৃত ওজনের চেয়ে বেশি হবে।</p>",
+        },
+        {
+          id: 10,
+          question:
+            "একটি মেশিনগান থেকে প্রতি সেকেন্ডে n সংখ্যক বুলেট নির্গত হয়। প্রতিটি বুলেটের ভর m kg এবং এর বেগ v ms⁻¹ হলে মেশিনগানের ওপর প্রযুক্ত বল (N এককে) হলো -",
+          options: {
+            a: "mnv",
+            b: "mn/v",
+            c: "mn",
+            d: "mv/n",
+          },
+          correct: "a",
+          explanation:
+            "<p>আমরা জানি, **বলের ঘাত (Impulse of Force)** = বল (F) × সময় (Δt) = ভরবেগের পরিবর্তন (Δp)।</p><br><p>প্রতি সেকেন্ডে n সংখ্যক বুলেট নির্গত হয়।</p><br><p>প্রতিটি বুলেটের ভর = m kg</p><br><p>প্রতিটি বুলেটের বেগ = v ms⁻¹</p><br><p>সুতরাং, একটি বুলেটের ভরবেগ = mv</p><br><p>প্রতি সেকেন্ডে (Δt = 1s) মোট ভরবেগের পরিবর্তন = n সংখ্যক বুলেটের মোট ভরবেগ</p><br><p>Δp = n × (mv) = nmv</p><br><p>আমরা জানি, F = Δp / Δt</p><br><p>F = (nmv) / 1s</p><br><p>F = nmv</p><br><p>সুতরাং, মেশিনগানের ওপর প্রযুক্ত বল (প্রতিক্রিয়া বল) হলো **mnv**। এটি রৈখিক ভরবেগের নিত্যতা সূত্র এবং নিউটনের গতির তৃতীয় সূত্রের একটি প্রয়োগ। বুলেটগুলো যখন সামনের দিকে ছোটে, তখন ভরবেগের নিত্যতা বজায় রাখার জন্য মেশিনগানটি পেছনের দিকে সমান ও বিপরীতমুখী একটি বল অনুভব করে, যা 'কিকব্যাক' বা রিকোয়েল নামে পরিচিত।</p>",
+        },
+        {
+          id: 11,
+          question: "কোনটি বলের ঘাতের মাত্রা সমীকরণ?",
+          options: {
+            a: "MLT⁻¹",
+            b: "ML⁻¹T⁻²",
+            c: "MLT⁻²",
+            d: "M⁻¹LT⁻²",
+          },
+          correct: "a",
+          explanation:
+            "<p>**বলের ঘাত (Impulse of Force)** হলো বল এবং বলের ক্রিয়াকালের গুণফল। গাণিতিকভাবে, J = F × Δt।</p><br><p>আমরা জানি, বল (F) এর মাত্রা = [MLT⁻²]</p><br><p>এবং সময় (Δt) এর মাত্রা = [T]</p><br><p>সুতরাং, বলের ঘাতের মাত্রা সমীকরণ হবে:</p><br><p>[J] = [F] × [Δt] = [MLT⁻²] × [T]</p><br><p>[J] = [MLT<sup>(-2+1)</sup>]</p><br><p>[J] = [MLT⁻¹]</p><br><p>উল্লেখ্য, বলের ঘাত বস্তুর রৈখিক ভরবেগের পরিবর্তনের সমান, এবং রৈখিক ভরবেগের মাত্রাও [MLT⁻¹]।</p>",
+        },
+        {
+          id: 12,
+          question: "বলের ঘাতের সাথে কোন রাশিটির সাংখ্যিক মান সমান?",
+          options: {
+            a: "কৌণিক ভরবেগের পরিবর্তন",
+            b: "রৈখিক ভরবেগের পরিবর্তন",
+            c: "জড়তার ভ্রামক",
+            d: "টর্ক",
+          },
+          correct: "b",
+          explanation:
+            "<p>**বলের ঘাত-ভরবেগ উপপাদ্য (Impulse-Momentum Theorem)** অনুসারে, কোনো বস্তুর উপর প্রযুক্ত বলের ঘাত (Impulse) সেই বস্তুর রৈখিক ভরবেগের পরিবর্তনের (Change in Linear Momentum) সমান।</p><br><p>অর্থাৎ, J = Δp = mv - mu</p><br><p>যেখানে,<br>J = বলের ঘাত<br>Δp = রৈখিক ভরবেগের পরিবর্তন<br>m = বস্তুর ভর<br>v = শেষ বেগ<br>u = আদি বেগ</p><br><p>এটি নিউটনের দ্বিতীয় সূত্রের একটি সমতুল্য রূপ, যেখানে বলের ক্রিয়াকালের প্রভাব বিবেচনা করা হয়।</p>",
+        },
+        {
+          id: 13,
+          question: "বলের ঘাতের একক কোনটি?",
+          options: {
+            a: "N",
+            b: "kgm",
+            c: "kg ms⁻¹",
+            d: "J",
+          },
+          correct: "c",
+          explanation:
+            "<p>**বলের ঘাত (Impulse of Force)** হলো বল (Force) এবং বলের ক্রিয়াকালের (Time) গুণফল।</p><br><p>বলের একক = নিউটন (N)</p><br><p>সময়ের একক = সেকেন্ড (s)</p><br><p>সুতরাং, বলের ঘাতের একক = নিউটন-সেকেন্ড (N⋅s)</p><br><p>আমরা জানি, 1 N = 1 kg ms⁻²।</p><br><p>তাহলে, বলের ঘাতের একক = (kg ms⁻²) × s = kg ms<sup>(-2+1)</sup> = kg ms⁻¹</p><br><p>উল্লেখ্য, **রৈখিক ভরবেগের (Linear Momentum)** এককও kg ms⁻¹, যা বলের ঘাত-ভরবেগ উপপাদ্যের সাথে সামঞ্জস্যপূর্ণ।</p><br><p>বিকল্প অপশনগুলো বিবেচনা করলে:</p><br><p>• (a) N: এটি বলের একক।</p><br><p>• (b) kgm: এটি ভর এবং দূরত্বের গুণফলের একক, যা কোনো সুনির্দিষ্ট ভৌত রাশির সাধারণ একক নয়।</p><br><p>• (d) J: এটি কাজের বা শক্তির একক (জুল)।</p>",
+        },
+        {
+          id: 14,
+          question:
+            "যখন কোনো ব্যবস্থার উপর প্রযুক্ত মোট বাহ্যিক বল শূন্য হয় তখন নিচের কোন রাশিটির কোনো পরিবর্তন হয় না?",
+          options: {
+            a: "ব্যবস্থার বলের ঘাত",
+            b: "ব্যবস্থার কৌণিক ভরবেগ",
+            c: "ব্যবস্থার রৈখিক ভরবেগ",
+            d: "কোনোটিই নয়",
+          },
+          correct: "c",
+          explanation:
+            "<p>**রৈখিক ভরবেগের নিত্যতা সূত্র (Law of Conservation of Linear Momentum)** অনুসারে, যদি কোনো ব্যবস্থার (System) উপর প্রযুক্ত মোট বাহ্যিক বল (Net External Force) শূন্য হয়, তাহলে ওই ব্যবস্থার মোট **রৈখিক ভরবেগ (Linear Momentum)** ধ্রুব থাকে বা অপরিবর্তিত থাকে। এর অর্থ হলো, সংঘর্ষ বা বিস্ফোরণের মতো অভ্যন্তরীণ ঘটনা ঘটলেও, বাহ্যিক বল শূন্য থাকলে সিস্টেমের মোট ভরবেগ একই থাকে।</p><br><p>যদি বাহ্যিক টর্ক (External Torque) শূন্য হয়, তাহলে ব্যবস্থার কৌণিক ভরবেগ (Angular Momentum) সংরক্ষিত থাকে। কিন্তু প্রশ্নটি বাহ্যিক বলের কথা উল্লেখ করেছে, তাই রৈখিক ভরবেগই এক্ষেত্রে অপরিবর্তিত থাকে।</p>",
+        },
+        {
+          id: 15,
+          question:
+            "M ভরের একটি বস্তু ধ্রুব বেগে x-অক্ষের সমান্তরালে গতিশীল। মূলবিন্দুর সাপেক্ষে এর কৌণিক ভরবেগ –",
+          options: {
+            a: "শূন্য",
+            b: "ধ্রুব থাকে",
+            c: "বেড়ে যায়",
+            d: "কমে যায়",
+          },
+          correct: "b",
+          explanation:
+            "<p>**কৌণিক ভরবেগ (Angular Momentum)**, L = r × p, যেখানে r হলো ঘূর্ণন অক্ষ থেকে বস্তুর অবস্থান ভেক্টর এবং p হলো বস্তুর রৈখিক ভরবেগ (p = mv)। কৌণিক ভরবেগের মান হলো L = r p sinθ, যেখানে θ হলো r এবং p এর মধ্যবর্তী কোণ।</p><br><p>যদি M ভরের একটি বস্তু ধ্রুব বেগে x-অক্ষের সমান্তরালে গতিশীল থাকে, তাহলে তার রৈখিক ভরবেগ (p = Mv) ধ্রুব থাকে এবং x-অক্ষ বরাবর থাকে। এখন, মূলবিন্দুর (Origin) সাপেক্ষে এর কৌণিক ভরবেগ নির্ণয় করতে হবে।</p><br><p>ধরি, বস্তুটি y = y<sub>0</sub> রেখা বরাবর x-অক্ষের সমান্তরালে গতিশীল। তাহলে, r ভেক্টরটি মূলবিন্দু থেকে বস্তুর দিকে থাকবে এবং p ভেক্টরটি x-অক্ষের সমান্তরালে থাকবে। যেহেতু বস্তুটি y-অক্ষ থেকে একটি ধ্রুব দূরত্ব (y<sub>0</sub>) বজায় রেখে চলছে, তাই r এর উল্লম্ব উপাংশ (মূলবিন্দু থেকে রৈখিক ভরবেগের ক্রিয়া রেখার উপর অঙ্কিত লম্ব দূরত্ব) ধ্রুব থাকবে। এই লম্ব দূরত্ব (d) হলো r sinθ এর মান।</p><br><p>সুতরাং, কৌণিক ভরবেগ, L = p × d = (Mv) × y<sub>0</sub></p><br><p>যেহেতু M, v এবং y<sub>0</sub> (যে দূরত্বে বস্তুটি x-অক্ষের সমান্তরালে চলছে) সবগুলোই ধ্রুব, তাই মূলবিন্দুর সাপেক্ষে এর কৌণিক ভরবেগও **ধ্রুব থাকে**। এটি শূন্য নয়, কারণ বস্তুটি মূলবিন্দু থেকে একটি নির্দিষ্ট দূরত্বে (y<sub>0</sub>) গতিশীল।</p>",
+        },
+        {
+          id: 16,
+          question:
+            "স্থির অবস্থায় থাকা একটি বস্তু বিস্ফোরিত হয়ে m₁ ও m₂ ভরের দুটি বস্তুতে পরিণত হয়ে যথাক্রমে v₁ ও v₂ বেগে বিপরীত দিকে চলমান। এর অনুপাত কত?",
+          options: {
+            a: "m₂/m₁",
+            b: "m₁/m₂",
+            c: "-m₂/m₁",
+            d: "-m₁/m₂",
+          },
+          correct: "a",
+          explanation:
+            "<p>এই সমস্যাটি **রৈখিক ভরবেগের নিত্যতা সূত্র (Law of Conservation of Linear Momentum)** এর উপর ভিত্তি করে সমাধান করা হয়।</p><br><p>প্রাথমিক অবস্থা: বস্তুটি স্থির ছিল। সুতরাং, প্রাথমিক ভরবেগ = 0।</p><br><p>P<sub>initial</sub> = M<sub>total</sub> × 0 = 0</p><br><p>চূড়ান্ত অবস্থা: বস্তুটি m₁ ও m₂ ভরের দুটি বস্তুতে বিভক্ত হয়ে যথাক্রমে v₁ ও v₂ বেগে বিপরীত দিকে চলমান।</p><br><p>যদি একটি দিককে ধনাত্মক ধরা হয়, তবে বিপরীত দিকটি ঋণাত্মক হবে। ধরি, v₁ এর দিক ধনাত্মক। তাহলে v₂ এর দিক ঋণাত্মক হবে।</p><br><p>P<sub>final</sub> = m₁v₁ + m₂(-v₂)</p><br><p>P<sub>final</sub> = m₁v₁ - m₂v₂</p><br><p>ভরবেগের নিত্যতা সূত্র অনুযায়ী:</p><br><p>P<sub>initial</sub> = P<sub>final</sub></p><br><p>0 = m₁v₁ - m₂v₂</p><br><p>m₁v₁ = m₂v₂</p><br><p>এখন, v₁/v₂ এর অনুপাত নির্ণয় করতে বলা হয়েছে:</p><br><p>v₁ / v₂ = m₂ / m₁</p><br><p>অতএব, বেগের অনুপাত **m₂/m₁** হবে।</p>",
+        },
+        {
+          id: 17,
+          question:
+            "m₁ ভরের এবং v₁ বেগের একটি কণা একই ভরের স্থির আরেকটি কণাকে ধাক্কা দিল। ধাক্কাটি স্থিতিস্থাপক হলে, ধাক্কার পর দ্বিতীয় কণার বেগ হবে -",
+          options: {
+            a: "2v₁",
+            b: "v₁",
+            c: "-v₁",
+            d: "0",
+          },
+          correct: "b",
+          explanation:
+            "<p>এটি স্থিতিস্থাপক সংঘর্ষের (Elastic Collision) একটি বিশেষ ঘটনা, যেখানে ভরবেগের নিত্যতা এবং গতিশক্তির নিত্যতা উভয়ই বজায় থাকে।</p><br><p>দেওয়া আছে:</p><br><p>প্রথম কণার ভর, m₁ = m</p><br><p>প্রথম কণার আদি বেগ, u₁ = v₁</p><br><p>দ্বিতীয় কণার ভর, m₂ = m (কারণ একই ভরের)</p><br><p>দ্বিতীয় কণার আদি বেগ, u₂ = 0 (কারণ স্থির ছিল)</p><br><p>সংঘর্ষের পর প্রথম কণার বেগ, v₁'</p><br><p>সংঘর্ষের পর দ্বিতীয় কণার বেগ, v₂'</p><br><p>**স্থিতিস্থাপক সংঘর্ষের ক্ষেত্রে, যদি সংঘর্ষরত কণাগুলোর ভর সমান হয় এবং দ্বিতীয় কণাটি স্থির থাকে, তাহলে সংঘর্ষের পর প্রথম কণাটি স্থির হয়ে যায় এবং দ্বিতীয় কণাটি প্রথম কণার আদি বেগ নিয়ে চলতে শুরু করে।**</p><br><p>এই বিশেষ ক্ষেত্রে, দ্বিতীয় কণার বেগ হবে: v₂' = u₁ = v₁</p><br><p>এবং প্রথম কণার বেগ হবে: v₁' = u₂ = 0</p><br><p>সুতরাং, ধাক্কার পর দ্বিতীয় কণার বেগ হবে **v₁**।</p><br><p>এই ফলাফলটি ভরবেগের নিত্যতা (m₁u₁ + m₂u₂ = m₁v₁' + m₂v₂') এবং গতিশক্তির নিত্যতা (1/2 m₁u₁² + 1/2 m₂u₂² = 1/2 m₁v₁'² + 1/2 m₂v₂'²) উভয় সূত্র প্রয়োগ করে প্রমাণ করা যায়।</p>",
+        },
+        {
+          id: 18,
+          question: "ঘাত-এর একক কিসের অনুরূপ?",
+          options: {
+            a: "বল",
+            b: "ভরবেগ",
+            c: "ত্বরণ",
+            d: "ভর",
+          },
+          correct: "b",
+          explanation:
+            "<p>**ঘাত (Impulse)** হলো বল (F) এবং বলের ক্রিয়াকালের (Δt) গুণফল, অর্থাৎ J = F × Δt।</p><br><p>আমরা জানি যে, **বলের ঘাত-ভরবেগ উপপাদ্য (Impulse-Momentum Theorem)** অনুসারে, বলের ঘাত কোনো বস্তুর রৈখিক ভরবেগের পরিবর্তনের (Change in Linear Momentum) সমান।</p><br><p>অর্থাৎ, J = Δp</p><br><p>যেহেতু বলের ঘাত রৈখিক ভরবেগের পরিবর্তনের সমান, তাই **বলের ঘাতের একক রৈখিক ভরবেগের এককের অনুরূপ**।</p><br><p>বলের ঘাতের একক = নিউটন-সেকেন্ড (N⋅s)</p><br><p>রৈখিক ভরবেগের একক = কিলোগ্রাম মিটার প্রতি সেকেন্ড (kg ms⁻¹)</p><br><p>এবং 1 N⋅s = 1 (kg ms⁻²)⋅s = 1 kg ms⁻¹</p><br><p>সুতরাং, ঘাত-এর একক **ভরবেগ** এর এককের অনুরূপ।</p>",
+        },
+        {
+          id: 19,
+          question: "বস্তুর গতি জড়তা নিচের কোনটির সমানুপাতিক?",
+          options: {
+            a: "ভরবেগ",
+            b: "বল",
+            c: "আয়তন",
+            d: "বেগ",
+          },
+          correct: "a",
+          explanation:
+            "<p>**গতি জড়তা (Inertia of Motion)** হলো বস্তুর সেই ধর্ম যার কারণে গতিশীল বস্তু সমবেগে সরলপথে চলতে চায় এবং তার অবস্থার পরিবর্তন ঘটাতে বাধা দেয়। বস্তুর ভর যত বেশি হয়, তার গতি জড়তা তত বেশি হয়। তবে, যদি 'গতি জড়তা' বলতে সেই রাশিকে বোঝানো হয় যা বস্তুর গতি বজায় রাখার ক্ষমতা নির্দেশ করে এবং যা বস্তুর ভর ও বেগের উপর নির্ভরশীল, তাহলে তা **ভরবেগ (Momentum)** এর সাথে সম্পর্কিত।</p><br><p>ভরবেগ (p) = ভর (m) × বেগ (v)।</p><br><p>যে বস্তুর ভরবেগ বেশি, তার গতিশীল অবস্থা বজায় রাখার প্রবণতাও তত বেশি, অর্থাৎ তার গতি জড়তা তত বেশি। তাই, বস্তুর গতি জড়তা তার **ভরবেগের** সমানুপাতিক।</p>",
+        },
+        {
+          id: 20,
+          question:
+            "নিউটনের গতির তৃতীয় সূত্রানুসারে, ক্রিয়া ও প্রতিক্রিয়ার সম্পর্ক কীরূপ?",
+          options: {
+            a: "ক্রিয়া > প্রতিক্রিয়া",
+            b: "প্রতিক্রিয়া > ক্রিয়া",
+            c: "ক্রিয়া = প্রতিক্রিয়া",
+            d: "ক্রিয়া ≥ প্রতিক্রিয়া",
+          },
+          correct: "c",
+          explanation:
+            "<p>নিউটনের গতির তৃতীয় সূত্রানুসারে, **প্রত্যেক ক্রিয়ারই একটি সমান ও বিপরীত প্রতিক্রিয়া আছে (To every action, there is an equal and opposite reaction)**। এর অর্থ হলো, যখন একটি বস্তু অন্য একটি বস্তুর উপর বল প্রয়োগ করে (ক্রিয়া), তখন দ্বিতীয় বস্তুটি প্রথম বস্তুর উপর **সমান (Equal)** পরিমাণ বল **বিপরীত (Opposite)** দিকে প্রয়োগ করে (প্রতিক্রিয়া)। এই বল দুটি একই বস্তুর উপর ক্রিয়া করে না, বরং ভিন্ন ভিন্ন বস্তুর উপর ক্রিয়া করে এবং এদের মান সর্বদা সমান হয়।</p><br><p>সুতরাং, ক্রিয়া এবং প্রতিক্রিয়ার মধ্যে সম্পর্ক হলো **ক্রিয়া = প্রতিক্রিয়া**।</p>",
+        },
+        {
+          id: 21,
+          question: "বলের ঘাত দ্বারা বুঝায়-",
+          options: {
+            a: "টর্ক",
+            b: "জড়তার ভ্রামক",
+            c: "রৈখিক ভরবেগের পরিবর্তন",
+            d: "কৌণিক ভরবেগের পরিবর্তন",
+          },
+          correct: "c",
+          explanation:
+            "<p>**বলের ঘাত-ভরবেগ উপপাদ্য (Impulse-Momentum Theorem)** অনুযায়ী, কোনো বস্তুর উপর প্রযুক্ত বলের ঘাত (Impulse) সেই বস্তুর **রৈখিক ভরবেগের পরিবর্তনের (Change in Linear Momentum)** সমান।</p><br><p>যদি একটি বল F, Δt সময় ধরে কোনো বস্তুর উপর ক্রিয়া করে, তাহলে বলের ঘাত J = F × Δt।</p><br><p>এই বলের ঘাত বস্তুর ভরবেগের পরিবর্তন (Δp = mv - mu) এর সমান।</p><br><p>অর্থাৎ, J = Δp = রৈখিক ভরবেগের পরিবর্তন।</p><br><p>• **টর্ক (Torque)** হলো বলের ঘূর্ণন প্রভাব।</p><br><p>• **জড়তার ভ্রামক (Moment of Inertia)** হলো বস্তুর ঘূর্ণন গতির বিরুদ্ধে তার জড়তার পরিমাপ।</p><br><p>• **কৌণিক ভরবেগের পরিবর্তন (Change in Angular Momentum)** টর্ক এবং ক্রিয়াকালের গুণফলের (কৌণিক ঘাত) সমান।</p><br><p>সুতরাং, বলের ঘাত দ্বারা সরাসরি **রৈখিক ভরবেগের পরিবর্তন** বোঝায়।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                            <label class="option" data-option="${option}">
+                                              <div class="circle">${option}</div>
+                                              <span class="option-text">${question.options[option]}</span>
+                                            </label>
+                                          `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                               <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                               <div class="explanation-content">
+                                                 <div class="explanation-label">ব্যাখ্যা:</div>
+                                                 ${question.explanation}
+                                               </div>
+                                             </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                          <p class="question-label">${
+                                            index + 1
+                                          }. ${question.question}</p>
+                                          <div class="options">
+                                            ${optionsHTML}
+                                          </div>
+                                          ${explanationHTML}
+                                        `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
